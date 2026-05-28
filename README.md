@@ -1,88 +1,88 @@
 # Zone Power+HR (Garmin Edge data field)
 
-Data field Connect IQ pentru Garmin Edge 540 care arata simultan zonele de putere
-(7 zone) si zonele de puls (5 zone), cu timpul petrecut in fiecare zona, plus o banda
-jos cu putere medie pe 3s (stanga) si puls curent (dreapta). Culorile si o bara
-laterala care creste reflecta zona curenta in timp real.
+A Connect IQ data field for the Garmin Edge 540 that shows power zones (7 zones) and
+heart rate zones (5 zones) at the same time, with the time spent in each zone, plus a
+bottom band with 3s average power (left) and current heart rate (right). Colors and a
+growing side bar reflect the current zone in real time.
 
 ## Layout
 
 ```
 +--+-------------------------+-------------------------+--+
-|P |  Z7  451-921W     1:23  |  Z5  171-185   0:12     |H |   <- putere stanga (7)
-|w |  Z6  361-450W     0:16  |  Z4  159-170   2:01     |R |      puls dreapta (5)
+|P |  Z7  451-921W     1:23  |  Z5  171-185   0:12     |H |   <- power zones left (7)
+|w |  Z6  361-450W     0:16  |  Z4  159-170   2:01     |R |      HR zones right (5)
 |r |  ...                    |  ...                    |  |
-|b |  Z1  0-165W       0:05  |  Z1  93-119    0:30     |b |   <- bare verticale
-+--+-------------------------+-------------------------+--+      care cresc cu valoarea
-|     3s POWER (W)  248      |   HEART RATE (bpm)  152  |       <- banda jos, fundal
-+----------------------------+--------------------------+          colorat = zona curenta
+|b |  Z1  0-165W       0:05  |  Z1  93-119    0:30     |b |   <- vertical bars that
++--+-------------------------+-------------------------+--+      grow with the value
+|     3s POWER (W)  248      |   HEART RATE (bpm)  152  |       <- bottom band, cell
++----------------------------+--------------------------+          background = current zone
 ```
 
-- Coloana stanga: 7 zone de putere (Z7 sus .. Z1 jos), patratel colorat, interval in W,
-  timp cumulat. Zona curenta are chenar gros.
-- Coloana dreapta: la fel, 5 zone de puls, interval in bpm.
-- Banda jos: 3s power (stanga) si puls curent (dreapta); fundalul fiecarei celule e
-  culoarea zonei curente.
-- Barele de pe margini (stanga = putere, dreapta = puls) se umplu de jos in sus
-  proportional cu valoarea curenta, raportat la plafonul zonei maxime.
+- Left column: 7 power zones (Z7 top .. Z1 bottom), color swatch, range in W, cumulative
+  time. The current zone has a thick outline.
+- Right column: same, 5 heart rate zones, range in bpm.
+- Bottom band: 3s power (left) and current heart rate (right); each cell background is the
+  color of the current zone.
+- Edge bars (left = power, right = HR) fill from the bottom up, proportional to the current
+  value relative to the ceiling of the top zone.
 
-## De unde vin zonele
+## Where the zones come from
 
-1. Zonele de putere se citesc din profil cu `UserProfile.getPowerZones(SPORT_CYCLING)`.
-2. Daca nu exista, se calculeaza din FTP (`getFunctionalThresholdPower`) cu procentele
-   standard Garmin: 0 / 55 / 75 / 90 / 105 / 120 / 150 % FTP.
-3. Daca nici FTP nu e configurat, se foloseste proprietatea `ftp` (default 200 W),
-   setabila din setarile Connect IQ ale field-ului (Garmin Connect / Express).
+1. Power zones are read from the profile via `UserProfile.getPowerZones(SPORT_CYCLING)`.
+2. If unavailable, they are computed from FTP (`getFunctionalThresholdPower`) using the
+   standard Garmin percentages: 0 / 55 / 75 / 90 / 105 / 120 / 150 % FTP.
+3. If FTP is not configured either, the `ftp` property is used (default 200 W), which can
+   be set from the field's Connect IQ settings (Garmin Connect / Express).
 
-Zonele de puls vin din `getHeartRateZones2(SPORT_CYCLING)` (5 zone). Seteaza-le pe device
-in Profil utilizator pentru valori corecte.
+Heart rate zones come from `getHeartRateZones2(SPORT_CYCLING)` (5 zones). Set them on the
+device under User Profile for correct values.
 
 ## Build
 
-Ai nevoie de Connect IQ SDK (prin SDK Manager) sau extensia VS Code "Monkey C".
+You need the Connect IQ SDK (via the SDK Manager) or the VS Code "Monkey C" extension.
 
-1. Genereaza o cheie de developer (o singura data):
+1. Generate a developer key (once):
    ```
    openssl genrsa -out developer_key.pem 4096
    openssl pkcs8 -topk8 -inform PEM -outform DER -in developer_key.pem -out developer_key -nocrypt
    ```
-2. Compileaza pentru Edge 540:
+2. Compile for the Edge 540:
    ```
    monkeyc -d edge540 -f monkey.jungle -o bin/EdgeZoneField.prg -y developer_key
    ```
-   Daca `monkeyc` se plange ca un API are nevoie de un nivel mai mare, ridica
-   `minApiLevel` in `manifest.xml`.
+   If `monkeyc` complains that an API needs a higher level, raise `minApiLevel` in
+   `manifest.xml`.
 
-## Test in simulator
+## Test in the simulator
 
 ```
-connectiq                                   # porneste simulatorul
+connectiq                                   # start the simulator
 monkeydo bin/EdgeZoneField.prg edge540
 ```
-In simulator, seteaza FTP-ul si zonele in User Profile, apoi foloseste
-Simulation > Activity Data (sau un fisier FIT) ca sa trimiti putere si puls.
+In the simulator, set FTP and the zones under User Profile, then use
+Simulation > Activity Data (or a FIT file) to feed power and heart rate.
 
-## Instalare pe Edge 540
+## Install on the Edge 540
 
-1. Conecteaza Edge-ul prin USB.
-2. Copiaza `bin/EdgeZoneField.prg` in folderul `GARMIN/Apps/` de pe device.
-3. Deconecteaza. Pe Edge: adauga un ecran de date cu layout "single field" si alege
-   field-ul Connect IQ "Zone Power+HR" ca sa ocupe tot ecranul.
+1. Connect the Edge over USB.
+2. Copy `bin/EdgeZoneField.prg` into the `GARMIN/Apps/` folder on the device.
+3. Disconnect. On the Edge: add a data screen with the "single field" layout and pick the
+   Connect IQ field "Zone Power+HR" so it fills the whole screen.
 
-## Limitari
+## Limitations
 
-- Un data field se redeseneaza o data pe secunda. Barele si culorile se actualizeaza
-  in pasi de 1 secunda; nu exista animatie fluida sub-secunda (limitare de platforma).
-- Testat ca structura pentru Edge 540 (246x322). Pentru restul gamei, decomenteaza
-  produsele din `manifest.xml` si recompileaza cu `-d <device>`.
+- A data field redraws once per second. The bars and colors update in 1 second steps;
+  there is no smooth sub-second animation (a platform limitation).
+- Built and structured for the Edge 540 (246x322). For the rest of the range, uncomment
+  the products in `manifest.xml` and recompile with `-d <device>`.
 
-## Structura
+## Structure
 
 ```
-manifest.xml          tip "datafield", produs edge540
+manifest.xml          type "datafield", product edge540
 monkey.jungle         build
 source/ZoneFieldApp.mc    AppBase
-source/ZoneFieldView.mc   DataField: compute() + onUpdate() + desen
-source/Zones.mc           praguri zone, culori, timp-in-zona, format
-resources/                strings, icon, setari (FTP fallback)
+source/ZoneFieldView.mc   DataField: compute() + onUpdate() + drawing
+source/Zones.mc           zone thresholds, colors, time-in-zone, formatting
+resources/                strings, icon, settings (FTP fallback)
 ```

@@ -38,6 +38,15 @@ module Zones {
         Gfx.COLOR_BLACK, Gfx.COLOR_WHITE, Gfx.COLOR_BLACK, Gfx.COLOR_BLACK, Gfx.COLOR_WHITE
     ];
 
+    // Light tints used to fill each row by time share (black text stays readable).
+    const POWER_TINT = [
+        0xD8F4FB, 0xCCECFF, 0xC8F5C8, 0xFFFFCC, 0xFFE6C2, 0xFFD6FF, 0xFFD6D6
+    ];
+
+    const HR_TINT = [
+        0xDCDCDC, 0xCCECFF, 0xC8F5C8, 0xFFE6C2, 0xFFD6D6
+    ];
+
     // Standard Garmin %FTP lower bounds for the 7 power zones, plus a top ceiling.
     const FTP_PCT = [0.0, 0.55, 0.75, 0.90, 1.05, 1.20, 1.50, 4.00];
 

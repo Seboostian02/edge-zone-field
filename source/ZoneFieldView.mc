@@ -79,14 +79,14 @@ class ZoneFieldView extends Ui.DataField {
         dc.setColor(Gfx.COLOR_TRANSPARENT, bg);
         dc.clear();
 
-        var bottomH = (h * 0.15).toNumber();
+        var bottomH = (h * 0.10).toNumber();
         var topH = h - bottomH;
         var midX = w / 2;
 
         drawColumn(dc, 0, 0, midX, topH, fg,
-            7, mPwrBounds, mPwrTime, mPwrZoneIdx, Zones.POWER_COLORS, Zones.POWER_TINT, "W", false);
+            7, mPwrBounds, mPwrTime, mPwrZoneIdx, Zones.POWER_COLORS, Zones.POWER_TINT, false);
         drawColumn(dc, midX, 0, w - midX, topH, fg,
-            5, mHrBounds, mHrTime, mHrZoneIdx, Zones.HR_COLORS, Zones.HR_TINT, "", true);
+            5, mHrBounds, mHrTime, mHrZoneIdx, Zones.HR_COLORS, Zones.HR_TINT, true);
 
         drawBottom(dc, topH, w, bottomH);
     }
@@ -95,7 +95,7 @@ class ZoneFieldView extends Ui.DataField {
     // Rows are tiled from exact fractions so the last row ends precisely at the
     // column bottom (keeps both columns aligned to the same baseline).
     // rightSide mirrors the swatch + arrow to the device's right edge.
-    hidden function drawColumn(dc, x, y, colW, colH, fg, n, bounds, times, curIdx, colors, tints, unit, rightSide) {
+    hidden function drawColumn(dc, x, y, colW, colH, fg, n, bounds, times, curIdx, colors, tints, rightSide) {
         var total = 0;
         for (var i = 0; i < n; i += 1) { total += times[i]; }
         for (var r = 0; r < n; r += 1) {
@@ -103,26 +103,17 @@ class ZoneFieldView extends Ui.DataField {
             var rowTop = y + (r * colH) / n;
             var rowBot = y + ((r + 1) * colH) / n;
             var frac = (total > 0) ? times[zi].toFloat() / total : 0.0;
+            var lo = bounds[zi];
+            var hi = (zi == n - 1) ? bounds[n] : bounds[zi + 1] - 1;
             drawZoneRow(dc, x, rowTop, colW, rowBot - rowTop, fg,
                 Lang.format("Z$1$", [zi + 1]),
-                rangeStr(bounds, zi, n, unit),
+                hi.toString(), lo.toString(),
                 Zones.formatTime(times[zi]),
                 colors[zi], tints[zi], frac, (zi == curIdx), rightSide);
         }
     }
 
-    hidden function rangeStr(bounds, zi, n, unit) {
-        var lo = bounds[zi];
-        var hi;
-        if (zi == n - 1) {
-            hi = bounds[n];
-        } else {
-            hi = bounds[zi + 1] - 1;
-        }
-        return Lang.format("$1$-$2$$3$", [lo, hi, unit]);
-    }
-
-    hidden function drawZoneRow(dc, x, y, rowW, rowH, fg, label, range, timeStr, color, tint, frac, isCurrent, rightSide) {
+    hidden function drawZoneRow(dc, x, y, rowW, rowH, fg, label, upperStr, lowerStr, timeStr, color, tint, frac, isCurrent, rightSide) {
         var swW = 6;
         var cy = y + rowH / 2;
         var swatchX; var contentLeft; var contentRight;
@@ -152,16 +143,17 @@ class ZoneFieldView extends Ui.DataField {
         dc.fillRectangle(swatchX, y + 1, swW, rowH - 2);
 
         dc.setColor(fg, Gfx.COLOR_TRANSPARENT);
-        var topC = y + (rowH * 40) / 100;
-        var botC = y + (rowH * 76) / 100;
-        var midC = y + (rowH * 58) / 100;
-        // left: zone label (top) + range (bottom); right: big time, centered against that block.
-        dc.drawText(contentLeft, topC, Gfx.FONT_XTINY, label,
+        var l1 = y + (rowH * 14) / 100;
+        var l2 = y + (rowH * 45) / 100;
+        var l3 = y + (rowH * 80) / 100;
+        // left stacked: zone label (small), upper bound, lower bound (bigger)
+        dc.drawText(contentLeft, l1, Gfx.FONT_XTINY, label,
             Gfx.TEXT_JUSTIFY_LEFT | Gfx.TEXT_JUSTIFY_VCENTER);
-        dc.drawText(contentLeft, botC, Gfx.FONT_XTINY, range,
+        dc.drawText(contentLeft, l2, Gfx.FONT_SMALL, upperStr,
             Gfx.TEXT_JUSTIFY_LEFT | Gfx.TEXT_JUSTIFY_VCENTER);
-        dc.drawText(contentRight, midC, Gfx.FONT_SMALL, timeStr,
-            Gfx.TEXT_JUSTIFY_RIGHT | Gfx.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(contentLeft, l3, Gfx.FONT_SMALL, lowerStr,
+            Gfx.TEXT_JUSTIFY_LEFT | Gfx.TEXT_JUSTIFY_VCENTER);
+        drawZoneTime(dc, contentRight, l2, timeStr);
 
         if (isCurrent) {
             if (rightSide) {
@@ -177,16 +169,40 @@ class ZoneFieldView extends Ui.DataField {
         }
     }
 
+    // Right-aligned time. When hours are present (H:MM:SS) the seconds are
+    // drawn in a smaller font so the H:MM part stays large and it fits.
+    hidden function drawZoneTime(dc, rightX, cy, timeStr) {
+        var twoColons = false;
+        var c1 = timeStr.find(":");
+        if (c1 != null) {
+            var after = timeStr.substring(c1 + 1, timeStr.length());
+            if (after.find(":") != null) { twoColons = true; }
+        }
+        if (twoColons) {
+            var n = timeStr.length();
+            var main = timeStr.substring(0, n - 3);
+            var tail = timeStr.substring(n - 3, n);
+            var tailW = dc.getTextWidthInPixels(tail, Gfx.FONT_XTINY);
+            dc.drawText(rightX, cy, Gfx.FONT_XTINY, tail,
+                Gfx.TEXT_JUSTIFY_RIGHT | Gfx.TEXT_JUSTIFY_VCENTER);
+            dc.drawText(rightX - tailW, cy, Gfx.FONT_NUMBER_MILD, main,
+                Gfx.TEXT_JUSTIFY_RIGHT | Gfx.TEXT_JUSTIFY_VCENTER);
+        } else {
+            dc.drawText(rightX, cy, Gfx.FONT_NUMBER_MILD, timeStr,
+                Gfx.TEXT_JUSTIFY_RIGHT | Gfx.TEXT_JUSTIFY_VCENTER);
+        }
+    }
+
     hidden function drawBottom(dc, y, w, bandH) {
         var q = w / 4;
         drawBottomCell(dc, 0, y, q, bandH,
-            Zones.POWER_COLORS[mPwrZoneIdx], Zones.POWER_TEXT[mPwrZoneIdx],
+            Zones.POWER_COLORS[mPwrZoneIdx], Gfx.COLOR_BLACK,
             "3s W", mPwrHasData ? mPower3s.toString() : "0", Gfx.FONT_NUMBER_MILD);
         drawBottomCell(dc, q, y, w - 2 * q, bandH,
             Gfx.COLOR_DK_GRAY, Gfx.COLOR_WHITE,
             "TIME", Zones.formatTime(mElapsed), Gfx.FONT_NUMBER_MILD);
         drawBottomCell(dc, w - q, y, q, bandH,
-            Zones.HR_COLORS[mHrZoneIdx], Zones.HR_TEXT[mHrZoneIdx],
+            Zones.HR_COLORS[mHrZoneIdx], Gfx.COLOR_BLACK,
             "HR bpm", (mHr > 0) ? mHr.toString() : "0", Gfx.FONT_NUMBER_MILD);
     }
 
@@ -195,7 +211,7 @@ class ZoneFieldView extends Ui.DataField {
         dc.fillRectangle(x, y, cw, ch);
         dc.setColor(textColor, Gfx.COLOR_TRANSPARENT);
         dc.drawText(x + 3, y + 1, Gfx.FONT_XTINY, label, Gfx.TEXT_JUSTIFY_LEFT);
-        dc.drawText(x + cw / 2, y + ch / 2 + 4, valFont, value,
+        dc.drawText(x + cw / 2, y + ch / 2 + 2, valFont, value,
             Gfx.TEXT_JUSTIFY_CENTER | Gfx.TEXT_JUSTIFY_VCENTER);
     }
 }

@@ -11,7 +11,7 @@ module Zones {
     // Power zone fill colors (Z1 .. Z7), matching the reference layout.
     const POWER_COLORS = [
         0xADE8F4, // Z1 light cyan
-        0x00BFFF, // Z2 blue
+        0x0078D7, // Z2 blue
         0x00E000, // Z3 green
         0xFFFF00, // Z4 yellow
         0xFFA500, // Z5 orange
@@ -28,7 +28,7 @@ module Zones {
     // HR zone fill colors (Z1 .. Z5), Garmin defaults.
     const HR_COLORS = [
         0x9E9E9E, // Z1 gray
-        0x00BFFF, // Z2 blue
+        0x0078D7, // Z2 blue
         0x00E000, // Z3 green
         0xFFA500, // Z4 orange
         0xFF0000  // Z5 red

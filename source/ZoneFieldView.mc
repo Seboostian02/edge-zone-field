@@ -52,8 +52,8 @@ class ZoneFieldView extends Ui.DataField {
         mHr = hr;
 
         var et = null;
-        if (info has :elapsedTime) { et = info.elapsedTime; }
-        if (et == null && (info has :timerTime)) { et = info.timerTime; }
+        if (info has :timerTime) { et = info.timerTime; }
+        if (et == null && (info has :elapsedTime)) { et = info.elapsedTime; }
         if (et == null) { et = 0; }
         mElapsed = et / 1000;
 
